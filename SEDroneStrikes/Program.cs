@@ -78,5 +78,21 @@ namespace IngameScript
             // The method itself is required, but the arguments above
             // can be removed if not needed.
         }
+
+        public void remoteControlReference()
+        {
+            var list = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyRemoteControl>(list);
+            var reference = list[0] as IMyRemoteControl;
+
+            var currentPosition = reference.Position;
+
+            var forwardPos = reference.Position + Base6Directions.GetIntVector(reference.Orientation.TransformDirection(Base6Directions.Direction.Forward));
+            var forward = reference.CubeGrid.GridIntegerToWorld(forwardPos);
+            var forwardVector = Vector3D.Normalize(forward - reference.GetPosition());
+
+            Echo(currentPosition.ToString())
+
+        }
     }
 }
