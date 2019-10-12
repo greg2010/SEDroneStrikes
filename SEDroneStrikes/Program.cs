@@ -41,6 +41,65 @@ namespace IngameScript
         // https://github.com/malware-dev/MDK-SE/wiki/Quick-Introduction-to-Space-Engineers-Ingame-Scripts
         //
         // to learn more about ingame scripts.
+        static int logSize = 30;
+
+        private Logger logger = null;
+
+        class Logger
+        {
+            // Implementation is taken from https://codereview.stackexchange.com/a/135589
+            public class ConcurrentCircularBuffer<T>
+            {
+                private readonly LinkedList<T> _buffer;
+                private int _maxItemCount;
+
+                public ConcurrentCircularBuffer(int maxItemCount)
+                {
+                    _maxItemCount = maxItemCount;
+                    _buffer = new LinkedList<T>();
+                }
+
+                public void Put(T item)
+                {
+                    lock (_buffer)
+                    {
+                        _buffer.AddFirst(item);
+                        if (_buffer.Count > _maxItemCount)
+                        {
+                            _buffer.RemoveLast();
+                        }
+                    }
+                }
+
+                public IEnumerable<T> Read()
+                {
+                    lock (_buffer) { return _buffer.ToArray(); }
+                }
+            }
+
+
+            private readonly Action<String> Echo;
+            private readonly IMyProgrammableBlock Me;
+
+            private readonly ConcurrentCircularBuffer<string> logBuffer;
+
+            public Logger(Action<string> Echo, IMyProgrammableBlock Me, int logSize)
+            {
+                this.Echo = Echo;
+                this.Me = Me;
+
+                this.Me.CustomData = "";
+                this.logBuffer = new ConcurrentCircularBuffer<string>(logSize);
+
+                Echo("Printing logs to CustomData of this programmable block...");
+            }
+
+            public void Log(string message)
+            {
+                logBuffer.Put(message);
+                this.Me.CustomData = logBuffer.Read().Reverse().Aggregate("", (acc, msg) => acc + "\n" + msg);
+            }
+        }
 
         public Program()
         {
@@ -54,6 +113,8 @@ namespace IngameScript
             // It's recommended to set Runtime.UpdateFrequency 
             // here, which will allow your script to run itself without a 
             // timer block.
+            
+            this.logger = new Logger(Echo, Me, logSize);
         }
 
         public void Save()
@@ -77,6 +138,18 @@ namespace IngameScript
             // 
             // The method itself is required, but the arguments above
             // can be removed if not needed.
+            remoteControlReference();
+
+            string textDisplay = "testText1234";
+            textDisplayFunction(textDisplay);
+
+        }
+
+        public bool textDisplayFunction(string testText)
+        {
+            IMyTextPanel Display = GridTerminalSystem.GetBlockWithName("LCD Panel") as IMyTextPanel;
+            bool displayOutput = Display.WriteText(testText);
+            return displayOutput;
         }
 
         public void remoteControlReference()
@@ -91,7 +164,10 @@ namespace IngameScript
             var forward = reference.CubeGrid.GridIntegerToWorld(forwardPos);
             var forwardVector = Vector3D.Normalize(forward - reference.GetPosition());
 
-            Echo(currentPosition.ToString())
+            Echo(currentPosition.ToString());
+            Echo(forwardPos.ToString());
+            Echo(forwardVector.ToString());
+            logger.Log(forwardVector.ToString());
 
         }
     }
