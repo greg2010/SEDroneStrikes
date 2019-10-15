@@ -113,7 +113,7 @@ namespace IngameScript
             // It's recommended to set Runtime.UpdateFrequency 
             // here, which will allow your script to run itself without a 
             // timer block.
-            
+
             this.logger = new Logger(Echo, Me, logSize);
         }
 
@@ -138,21 +138,39 @@ namespace IngameScript
             // 
             // The method itself is required, but the arguments above
             // can be removed if not needed.
+
+            Runtime.UpdateFrequency = UpdateFrequency.Update1; //runtime every second
+
             remoteControlReference();
 
-            string textDisplay = "testText1234";
-            textDisplayFunction(textDisplay);
+            //string textDisplay = "testText1234";
+            //textDisplayFunction(textDisplay);
+            textDisplayFunction(remoteControlReference(), "LCD Panel");
+
+            //PistonLengthDisplay();
+
 
         }
 
-        public bool textDisplayFunction(string testText)
+        public void PistonLengthDisplay() { 
+            IMyTextPanel Display = GridTerminalSystem.GetBlockWithName("Lakeshore Base Drill LCD Panel 1") as IMyTextPanel; 
+            IMyPistonBase Piston = GridTerminalSystem.GetBlockWithName("Lakeshore Base Long Piston 1") as IMyPistonBase; 
+            float PistonPositionAsNumber = Piston.CurrentPosition; 
+            string PistonPositionAsString = string.Format("{0:0.00}", PistonPositionAsNumber); 
+            Display.WriteText("Piston 1 position: " + PistonPositionAsString);
+        }
+        //Caught exception during the execution of script: Object reference not set to an instance of an object. at Program.Main(String argument, UpdateType updateSource)
+        //at Sandbox.Game.Entities.Blocks.MyProgrammableBlock.<>c__DisplayClass46_0.<ExecuteCode>b__0(IMyGridProgram)
+        //at Sandbox.Game.Entities.Blocks.MyProgrammableBlock.RunSandoxedProgramAction(Action`l action, String & response)
+
+        public bool textDisplayFunction(string testText, string displayName)
         {
-            IMyTextPanel Display = GridTerminalSystem.GetBlockWithName("LCD Panel") as IMyTextPanel;
+            IMyTextPanel Display = GridTerminalSystem.GetBlockWithName(displayName) as IMyTextPanel;
             bool displayOutput = Display.WriteText(testText);
             return displayOutput;
         }
 
-        public void remoteControlReference()
+        public string remoteControlReference()
         {
             var list = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyRemoteControl>(list);
@@ -160,15 +178,29 @@ namespace IngameScript
 
             var currentPosition = reference.Position;
 
+            //ForwardPos - position of forward direction of block in local grid
             var forwardPos = reference.Position + Base6Directions.GetIntVector(reference.Orientation.TransformDirection(Base6Directions.Direction.Forward));
+            //Forward - position of forward direction of block in global grid
             var forward = reference.CubeGrid.GridIntegerToWorld(forwardPos);
+            //forwardVector - Vector (global grid) direction of forward position of reference block
             var forwardVector = Vector3D.Normalize(forward - reference.GetPosition());
 
-            Echo(currentPosition.ToString());
-            Echo(forwardPos.ToString());
-            Echo(forwardVector.ToString());
+            //Left for future testing
+            //Echo(currentPosition.ToString());
+            //Echo(forwardPos.ToString());
+            //Echo(forwardVector.ToString());
+
             logger.Log(forwardVector.ToString());
 
+            string remoteControlReferenceOut = ("forwardPos =\n" + forwardPos + "\nForward =\n" + forward + "\nForward Vector:\n"+ forwardVector);
+            return remoteControlReferenceOut;
+        }
+
+        public void positionReference()
+        {
+            var list = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyThrust>(list);
+            var referenceThrust  = list[0] as IMyThrust;
         }
     }
 }
