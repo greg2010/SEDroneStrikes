@@ -4,9 +4,7 @@ using Sandbox.ModAPI.Interfaces;
 using SpaceEngineers.Game.ModAPI.Ingame;
 using System.Collections.Generic;
 using System.Collections;
-using System.Linq;
 using System.Text;
-using System;
 using VRage.Collections;
 using VRage.Game.Components;
 using VRage.Game.GUI.TextPanel;
@@ -16,6 +14,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Game;
 using VRage;
 using VRageMath;
+
 
 namespace IngameScript
 {
@@ -41,66 +40,11 @@ namespace IngameScript
         // https://github.com/malware-dev/MDK-SE/wiki/Quick-Introduction-to-Space-Engineers-Ingame-Scripts
         //
         // to learn more about ingame scripts.
+        //import logger.cs;
         static int logSize = 30;
 
         private Logger logger = null;
-
-        class Logger
-        {
-            // Implementation is taken from https://codereview.stackexchange.com/a/135589
-            public class ConcurrentCircularBuffer<T>
-            {
-                private readonly LinkedList<T> _buffer;
-                private int _maxItemCount;
-
-                public ConcurrentCircularBuffer(int maxItemCount)
-                {
-                    _maxItemCount = maxItemCount;
-                    _buffer = new LinkedList<T>();
-                }
-
-                public void Put(T item)
-                {
-                    lock (_buffer)
-                    {
-                        _buffer.AddFirst(item);
-                        if (_buffer.Count > _maxItemCount)
-                        {
-                            _buffer.RemoveLast();
-                        }
-                    }
-                }
-
-                public IEnumerable<T> Read()
-                {
-                    lock (_buffer) { return _buffer.ToArray(); }
-                }
-            }
-
-
-            private readonly Action<String> Echo;
-            private readonly IMyProgrammableBlock Me;
-
-            private readonly ConcurrentCircularBuffer<string> logBuffer;
-
-            public Logger(Action<string> Echo, IMyProgrammableBlock Me, int logSize)
-            {
-                this.Echo = Echo;
-                this.Me = Me;
-
-                this.Me.CustomData = "";
-                this.logBuffer = new ConcurrentCircularBuffer<string>(logSize);
-
-                Echo("Printing logs to CustomData of this programmable block...");
-            }
-
-            public void Log(string message)
-            {
-                logBuffer.Put(message);
-                this.Me.CustomData = logBuffer.Read().Reverse().Aggregate("", (acc, msg) => acc + "\n" + msg);
-            }
-        }
-
+        
         public Program()
         {
             // The constructor, called only once every session and
@@ -141,11 +85,11 @@ namespace IngameScript
 
             Runtime.UpdateFrequency = UpdateFrequency.Update1; //runtime every second
 
-            remoteControlReference();
+            //remoteControlReference();
 
             //string textDisplay = "testText1234";
             //textDisplayFunction(textDisplay);
-            textDisplayFunction(remoteControlReference(), "LCD Panel");
+            textDisplayFunction(vectorsFromReference(remoteControlReference()), "LCD Panel");
 
             //PistonLengthDisplay();
 
@@ -159,9 +103,6 @@ namespace IngameScript
             string PistonPositionAsString = string.Format("{0:0.00}", PistonPositionAsNumber); 
             Display.WriteText("Piston 1 position: " + PistonPositionAsString);
         }
-        //Caught exception during the execution of script: Object reference not set to an instance of an object. at Program.Main(String argument, UpdateType updateSource)
-        //at Sandbox.Game.Entities.Blocks.MyProgrammableBlock.<>c__DisplayClass46_0.<ExecuteCode>b__0(IMyGridProgram)
-        //at Sandbox.Game.Entities.Blocks.MyProgrammableBlock.RunSandoxedProgramAction(Action`l action, String & response)
 
         public bool textDisplayFunction(string testText, string displayName)
         {
@@ -170,12 +111,17 @@ namespace IngameScript
             return displayOutput;
         }
 
-        public string remoteControlReference()
+        public IMyTerminalBlock remoteControlReference()
         {
             var list = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyRemoteControl>(list);
             var reference = list[0] as IMyRemoteControl;
-
+            IMyTextPanel Display = GridTerminalSystem.GetBlockWithName("LCD Display") as IMyTextPanel;
+            
+            return reference;
+        }
+        public string vectorsFromReference(IMyTerminalBlock reference)
+        {
             var currentPosition = reference.Position;
 
             //ForwardPos - position of forward direction of block in local grid
@@ -185,14 +131,10 @@ namespace IngameScript
             //forwardVector - Vector (global grid) direction of forward position of reference block
             var forwardVector = Vector3D.Normalize(forward - reference.GetPosition());
 
-            //Left for future testing
-            //Echo(currentPosition.ToString());
-            //Echo(forwardPos.ToString());
-            //Echo(forwardVector.ToString());
 
             logger.Log(forwardVector.ToString());
 
-            string remoteControlReferenceOut = ("forwardPos =\n" + forwardPos + "\nForward =\n" + forward + "\nForward Vector:\n"+ forwardVector);
+            string remoteControlReferenceOut = ("currentPosition =\n" + currentPosition + "\nforwardPos =\n" + forwardPos + "\nForward =\n" + forward + "\nForward Vector:\n" + forwardVector);
             return remoteControlReferenceOut;
         }
 
@@ -201,6 +143,12 @@ namespace IngameScript
             var list = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyThrust>(list);
             var referenceThrust  = list[0] as IMyThrust;
+
+
+
         }
+
+
+        
     }
 }
