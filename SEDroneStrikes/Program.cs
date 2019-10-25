@@ -70,6 +70,8 @@ namespace IngameScript
             // This method is optional and can be removed if not
             // needed.
         }
+        
+        //List<IMyHydrogenEngine> hydrogenEngines = new List<>();
 
         public void Main(string argument, UpdateType updateSource)
         {
@@ -89,11 +91,21 @@ namespace IngameScript
 
             //string textDisplay = "testText1234";
             //textDisplayFunction(textDisplay);
-            textDisplayFunction(vectorsFromReference(remoteControlReference()), "LCD Panel");
-
+            //textDisplayFunction(vectorsFromReference(remoteControlReference()), "LCD Panel");
             //PistonLengthDisplay();
+           
+        }
 
-
+        private List<T> GetBlocksByNameOfType<T>(string name)
+        {
+            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+            List<T> casted = new List<T>();
+            GridTerminalSystem.SearchBlocksOfName(name, blocks, block => block is T);
+            foreach (var thruster in blocks)
+            {
+                casted.Add((T)thruster);
+            }
+            return casted;
         }
 
         public void PistonLengthDisplay() { 
@@ -115,12 +127,10 @@ namespace IngameScript
         {
             var list = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyRemoteControl>(list);
-            var reference = list[0] as IMyRemoteControl;
-            IMyTextPanel Display = GridTerminalSystem.GetBlockWithName("LCD Display") as IMyTextPanel;
-            
+            var reference = list[0] as IMyRemoteControl;           
             return reference;
         }
-        public string vectorsFromReference(IMyTerminalBlock reference)
+        /*public string vectorsFromReference(IMyTerminalBlock reference)
         {
             var currentPosition = reference.Position;
 
@@ -144,11 +154,32 @@ namespace IngameScript
             GridTerminalSystem.GetBlocksOfType<IMyThrust>(list);
             var referenceThrust  = list[0] as IMyThrust;
 
-
-
         }
+        public IMyTerminalBlock thrusterAssigner(IMyTerminalBlock reference)
+        {
+
+            var thrusters = new Dictionary<Vector3, List<IMyThrust>>();
+
+            List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyThrust>(blocks);
+
+            Matrix fromGridToReference;
+            reference.Orientation.GetMatrix(out fromGridToReference);
+            Matrix.Transpose(ref fromGridToReference, out fromGridToReference);
+            for (int i = 0; i < blocks.Count; ++i)
+            {
+                IMyThrust thruster = blocks[i] as IMyThrust;
+                Matrix fromThrusterToGrid;
+                thruster.Orientation.GetMatrix(out fromThrusterToGrid);
+                Vector3 accelerationDirection = Vector3.Transform(fromThrusterToGrid.Backward, fromGridToReference);
+
+                if (!thrusters.ContainsKey(accelerationDirection))
+                    thrusters[accelerationDirection] = new List<IMyThrust>();
+                thrusters[accelerationDirection].Add(thruster);
+            }
+            return blocks;
+        }*/
 
 
-        
     }
 }
